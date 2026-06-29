@@ -330,8 +330,8 @@ class KaleidoscopeProcessor:
                 frames.reverse()
                 durations.reverse()
 
-                # 量化 + 保存
-                gif_frames = [f.quantize(colors=128) for f in frames]
+                # 保持原质量，只转 P 模式（GIF 要求）
+                gif_frames = [f.convert("P", palette=Image.ADAPTIVE) for f in frames]
                 save_kwargs = {
                     "save_all": True,
                     "append_images": gif_frames[1:],
