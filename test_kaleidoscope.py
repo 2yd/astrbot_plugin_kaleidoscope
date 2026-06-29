@@ -22,13 +22,13 @@ from PIL import Image, ImageSequence, ImageFile
 
 # ========================== 算法参数（可调） ==========================
 
-CANVAS_SIZE = 800
+CANVAS_SIZE = 600
 BRANCH_COUNT = 8          # 分支数
 LAYER_COUNT = 5            # 每分支层数
-BASE_SIZE = 240            # 基础元素长边
+BASE_SIZE = 180            # 基础元素长边
 
 # 每层距离圆心的距离
-LAYER_DISTANCES = [80, 140, 210, 290, 370]
+LAYER_DISTANCES = [50, 85, 135, 185, 240]
 
 # 每层缩放比例（最内层略微放大）
 LAYER_SCALES = [0.22, 0.35, 0.58, 0.85, 1.0]
@@ -166,8 +166,8 @@ def main():
     parser.add_argument("output", nargs="?", help="输出路径 (默认: kaleido_output.png)")
     parser.add_argument("--branches", type=int, default=8, help="分支数 (默认: 8)")
     parser.add_argument("--layers", type=int, default=5, help="每分支层数 (默认: 5)")
-    parser.add_argument("--canvas", type=int, default=1000, help="画布尺寸 (默认: 1000)")
-    parser.add_argument("--base-size", type=int, default=300, help="基础元素长边 (默认: 300)")
+    parser.add_argument("--canvas", type=int, default=600, help="画布尺寸 (默认: 600)")
+    parser.add_argument("--base-size", type=int, default=180, help="基础元素长边 (默认: 180)")
     args = parser.parse_args()
 
     # 覆盖全局参数

@@ -25,7 +25,7 @@ class KaleidoscopeProcessor:
     """万花筒图像处理器"""
 
     # 画布尺寸
-    CANVAS_SIZE = 800  # 800 × 800
+    CANVAS_SIZE = 600  # 600 × 600
 
     # 分支数量
     BRANCH_COUNT = 8  # 360°/8 = 45° 均分
@@ -34,13 +34,13 @@ class KaleidoscopeProcessor:
     LAYER_COUNT = 5
 
     # 每层距离圆心的距离（像素）
-    LAYER_DISTANCES = [80, 140, 210, 290, 370]
+    LAYER_DISTANCES = [50, 85, 135, 185, 240]
 
-    # 每层缩放比例（基础元素长边=240px）
+    # 每层缩放比例（基础元素长边=180px）
     LAYER_SCALES = [0.22, 0.35, 0.58, 0.85, 1.0]
 
     # 基础元素长边尺寸（像素）
-    BASE_SIZE = 240
+    BASE_SIZE = 180
 
     @staticmethod
     async def process_image(
