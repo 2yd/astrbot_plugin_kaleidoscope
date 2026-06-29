@@ -19,9 +19,11 @@ class FileUtils:
     """文件处理工具类"""
 
     SUPPORTED_STATIC_FORMATS = {".png", ".jpg", ".jpeg", ".bmp", ".webp"}
-    SUPPORTED_FORMATS = SUPPORTED_STATIC_FORMATS
+    SUPPORTED_GIF_FORMAT = {".gif"}
+    SUPPORTED_FORMATS = SUPPORTED_STATIC_FORMATS | SUPPORTED_GIF_FORMAT
 
     MAGIC_BYTES = {
+        "gif": ([b"GIF87a", b"GIF89a"], 6),
         "png": (b"\x89PNG\r\n\x1a\n", 8),
         "jpeg": (b"\xff\xd8\xff", 3),
         "webp": (b"RIFF", 4, b"WEBP", 8),
@@ -77,11 +79,13 @@ class FileUtils:
 
     @staticmethod
     def detect_image_format_by_magic(data: bytes) -> Optional[str]:
-        """通过魔数检测图像格式"""
+        """通过魔数检测图像格式（含 GIF）"""
         if len(data) < 12:
             return None
 
         magic = FileUtils.MAGIC_BYTES
+        if data[:6] in magic["gif"][0]:
+            return ".gif"
         if data[:8] == magic["png"][0]:
             return ".png"
         if data[:3] == magic["jpeg"][0]:

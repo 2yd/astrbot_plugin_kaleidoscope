@@ -86,9 +86,11 @@ class ImageHandler:
                     return
 
                 # 2. 提示处理中（非静默模式）
-                if not self.config.silent_mode:
-                    desc = KaleidoscopeProcessor.get_mode_description(mode)
-                    yield event.plain_result(f"🔄 正在生成{desc}...")
+            if not self.config.silent_mode:
+                gif_hint = "（动图逐帧处理，请耐心等待）" if any(
+                    s.lower().endswith(".gif") for s in image_sources
+                ) else ""
+                yield event.plain_result(f"🔄 正在生成万花筒效果...{gif_hint}")
 
                 # 3. 逐个处理图像源
                 processed = False
@@ -154,7 +156,7 @@ class ImageHandler:
             return self._get_local_file(image_source)
 
     async def _download_image(self, url: str) -> Optional[Path]:
-        """下载网络图片"""
+        """下载网络图片（根据格式应用不同大小限制）"""
         import aiohttp
 
         try:
@@ -166,13 +168,26 @@ class ImageHandler:
                         return None
 
                     data = await response.read()
-                    if len(data) > self.config.max_image_size_bytes:
-                        logger.error(f"图片超过大小限制: {len(data)} bytes")
-                        return None
 
+            # 魔数检测格式
             ext = self.file_utils.detect_image_format_by_magic(data)
             if not ext:
                 ext = self.file_utils.get_file_extension(url) or ".jpg"
+
+            # 根据格式选择大小限制
+            if ext == ".gif":
+                if not self.config.enable_gif:
+                    logger.warning("GIF 处理已禁用")
+                    return None
+                max_size = self.config.max_gif_size_bytes
+                size_label = f"{self.config.gif_size_limit_mb}MB"
+            else:
+                max_size = self.config.max_image_size_bytes
+                size_label = f"{self.config.image_size_limit_mb}MB"
+
+            if len(data) > max_size:
+                logger.error(f"图片超过大小限制: {len(data)} bytes > {max_size} bytes ({size_label})")
+                return None
 
             return await self._save_temp_file(data, "downloaded", ext)
 

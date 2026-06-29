@@ -34,6 +34,8 @@ class KaleidoscopePlugin(Star):
 
         logger.info("万花筒插件已加载")
         logger.info(f"当前配置: 图像限制={self._config.image_size_limit_mb}MB, "
+                    f"GIF限制={self._config.gif_size_limit_mb}MB, "
+                    f"GIF={'启用' if self._config.enable_gif else '禁用'}, "
                     f"频率限制={self._config.rate_limit_per_minute}次/分钟")
 
     def _load_config(self) -> PluginConfig:
@@ -71,15 +73,21 @@ class KaleidoscopePlugin(Star):
 指令:
 • /万花筒 或 kaleidoscope - 生成万花筒效果
 
+效果说明:
+以图片为「基础元素」，在正方形画布上呈8个放射状分支排列。
+每分支5层元素，越靠近中心越小，越靠边缘越大，
+每个元素旋转使顶部朝外，形成万花筒透视效果。
+
 使用方法:
 1. 发送一张图片，然后 @机器人 说「万花筒」
 2. 直接发送 /万花筒 并附带一张图片
 
-支持格式: PNG, JPG, BMP, WebP
+支持格式: PNG, JPG, BMP, WebP, GIF（动图逐帧处理）
 
 示例:
 - 发一张风景照并说: @机器人 万花筒
-- 发图同时: /万花筒 [图片]"""
+- 发图同时: /万花筒 [图片]
+- 发GIF动图: @机器人 万花筒"""
         yield event.plain_result(help_text)
 
     # ---- 自然语言指令（无斜杠） ----
