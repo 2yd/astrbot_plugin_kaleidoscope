@@ -1,6 +1,6 @@
 name: astrbot_plugin_kaleidoscope # 插件唯一识别名，以 astrbot_plugin_ 前缀开头
 display_name: 万花筒 # 用于展示的名字
 desc: 一个图像万花筒处理插件，将图片通过镜像旋转、色彩偏移生成万花筒视觉效果。 # 插件简短描述
-version: v1.1.0 # 插件版本号
+version: v1.2.0 # 插件版本号
 author: YourName # 作者
 repo: https://github.com/YourName/astrbot_plugin_kaleidoscope # 插件的仓库地址
