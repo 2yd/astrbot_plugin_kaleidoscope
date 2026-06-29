@@ -64,6 +64,16 @@ class KaleidoscopePlugin(Star):
             yield result
         event.stop_event()
 
+    # ---- 指令：倒放 ----
+
+    @filter.command("倒放", alias={"reverse", "gif倒放"})
+    async def cmd_reverse(self, event: AstrMessageEvent):
+        """GIF 倒放（动图帧序反转，静图原样返回）"""
+        await self._ensure_initialized()
+        async for result in self.image_handler.process_kaleidoscope(event, "reverse"):
+            yield result
+        event.stop_event()
+
     # ---- 指令：万花筒帮助 ----
 
     @filter.command("万花筒帮助", alias={"kaleidoscope help", "万花筒说明"})
@@ -104,6 +114,9 @@ class KaleidoscopePlugin(Star):
             "/万花筒": "kaleidoscope",
             "万花筒": "kaleidoscope",
             "kaleidoscope": "kaleidoscope",
+            "/倒放": "reverse",
+            "倒放": "reverse",
+            "reverse": "reverse",
             "/万花筒帮助": "help",
             "万花筒帮助": "help",
             "万花筒说明": "help",

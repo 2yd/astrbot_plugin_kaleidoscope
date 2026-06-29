@@ -72,11 +72,19 @@ class KaleidoscopeProcessor:
             is_gif = ext == ".gif"
 
             if is_gif:
-                # GIF 处理：逐帧万花筒 + 合成为动图
+                if mode == "reverse":
+                    return await KaleidoscopeProcessor._process_reverse_gif(
+                        input_path, output_path, config
+                    )
                 return await KaleidoscopeProcessor._process_gif(
                     input_path, output_path, mode, config
                 )
             else:
+                if mode == "reverse":
+                    # 静态图倒放 = 原图直接复制
+                    import shutil
+                    shutil.copy(input_path, output_path)
+                    return True, "倒放完成"
                 # 静态图处理（保持 RGBA，不烘焙白底，消除透明图白边）
                 def process_in_thread():
                     with Image.open(input_path) as img:
@@ -292,9 +300,59 @@ class KaleidoscopeProcessor:
             logger.error(f"GIF 处理失败: {e}", exc_info=True)
             return False, f"GIF 处理失败: {str(e)}"
 
+    # ======================== 倒放 ========================
+
+    @staticmethod
+    async def _process_reverse_gif(
+        input_path: str, output_path: str, config: Optional[PluginConfig] = None
+    ) -> Tuple[bool, str]:
+        """GIF 倒放：反转帧顺序"""
+        try:
+            loop = asyncio.get_running_loop()
+            max_frames = config.max_gif_frames if config else 200
+
+            def reverse_gif():
+                with Image.open(input_path) as gif:
+                    frames = []
+                    durations = []
+                    for raw_frame in ImageSequence.Iterator(gif):
+                        if len(frames) >= max_frames:
+                            break
+                        durations.append(raw_frame.info.get("duration", 100))
+                        f = raw_frame.copy()
+                        f = KaleidoscopeProcessor._to_rgba(f)
+                        frames.append(f)
+
+                if not frames:
+                    return False
+
+                # 反转帧顺序
+                frames.reverse()
+                durations.reverse()
+
+                # 量化 + 保存
+                gif_frames = [f.quantize(colors=128) for f in frames]
+                save_kwargs = {
+                    "save_all": True,
+                    "append_images": gif_frames[1:],
+                    "duration": durations,
+                    "loop": 0,
+                    "disposal": 2,
+                }
+                gif_frames[0].save(output_path, **save_kwargs)
+                return True
+
+            success = await loop.run_in_executor(None, reverse_gif)
+            return (True, "倒放完成") if success else (False, "GIF 处理失败")
+
+        except Exception as e:
+            logger.error(f"GIF 倒放失败: {e}", exc_info=True)
+            return False, f"倒放失败: {str(e)}"
+
     @staticmethod
     def get_mode_description(mode: str) -> str:
         descriptions = {
             "kaleidoscope": "万花筒效果（8分支放射对称 + 缩放透视）",
+            "reverse": "倒放效果",
         }
         return descriptions.get(mode, "未知模式")
