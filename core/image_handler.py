@@ -85,14 +85,7 @@ class ImageHandler:
                     yield self._error_msg(event, "未找到图像，请发送一张图片并 @机器人 说「万花筒」")
                     return
 
-                # 2. 提示处理中（非静默模式）
-            if not self.config.silent_mode:
-                gif_hint = "（动图逐帧处理，请耐心等待）" if any(
-                    s.lower().endswith(".gif") for s in image_sources
-                ) else ""
-                yield event.plain_result(f"🔄 正在生成万花筒效果...{gif_hint}")
-
-                # 3. 逐个处理图像源
+                # 2. 逐个处理图像源
                 processed = False
                 for image_source in image_sources:
                     try:
