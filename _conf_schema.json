@@ -1,0 +1,62 @@
+{
+  "image_size_limit_mb": {
+    "description": "图像大小限制 (MB)",
+    "type": "int",
+    "default": 10,
+    "min": 1,
+    "max": 100,
+    "hint": "允许处理的普通图像文件最大大小，单位MB"
+  },
+  "processing_timeout": {
+    "description": "处理超时时间 (秒)",
+    "type": "int",
+    "default": 30,
+    "min": 5,
+    "max": 120,
+    "hint": "图像处理的最大超时时间"
+  },
+  "output_quality": {
+    "description": "输出图像质量",
+    "type": "int",
+    "default": 85,
+    "min": 1,
+    "max": 100,
+    "hint": "输出图像质量 (1-100)"
+  },
+  "silent_mode": {
+    "description": "静默模式",
+    "type": "bool",
+    "default": false,
+    "hint": "是否启用静默模式（不发送处理提示消息）"
+  },
+  "enable_auto_cleanup": {
+    "description": "启用自动清理",
+    "type": "bool",
+    "default": true,
+    "hint": "发送成功后自动删除生成的文件"
+  },
+  "keep_files_hours": {
+    "description": "文件保留时间 (小时)",
+    "type": "int",
+    "default": 1,
+    "min": 0,
+    "max": 168,
+    "hint": "生成的文件保留多少小时后自动删除 (0=立即删除)"
+  },
+  "rate_limit_per_minute": {
+    "description": "请求频率限制 (次/分钟)",
+    "type": "int",
+    "default": 10,
+    "min": 0,
+    "max": 60,
+    "hint": "每个用户每分钟最多能请求多少次。设为0表示不限制。"
+  },
+  "max_concurrent_tasks": {
+    "description": "并发处理上限",
+    "type": "int",
+    "default": 3,
+    "min": 1,
+    "max": 10,
+    "hint": "插件同时处理图像任务的最大数量"
+  }
+}
