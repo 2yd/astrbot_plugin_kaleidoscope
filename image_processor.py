@@ -271,7 +271,7 @@ class KaleidoscopeProcessor:
                         f = f.convert("RGB")
                     normalized.append(f)
 
-                colors = max(64, min(255, int(64 + (255 - 64) * q / 100)))
+                colors = max(64, min(255, int(32 + 96 * q / 100)))
                 gf = [f.quantize(colors=colors) for f in normalized]
                 while len(durs) < len(gf):
                     durs.append(100)

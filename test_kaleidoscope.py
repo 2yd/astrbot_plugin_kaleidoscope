@@ -138,7 +138,7 @@ def process_gif(input_path: str, output_path: str):
                 f = f.convert("RGB")
             normalized.append(f)
 
-        gif_frames = [f.quantize(colors=226) for f in normalized]
+        gif_frames = [f.quantize(colors=114) for f in normalized]
 
         while len(durations) < len(gif_frames):
             durations.append(100)
