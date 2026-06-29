@@ -210,55 +210,58 @@ class KaleidoscopeProcessor:
         mode: str,
         config: Optional[PluginConfig] = None,
     ) -> Tuple[bool, str]:
-        """
-        处理 GIF 动图：逐帧提交到线程池，帧间 yield 防止 CPU 钉死
-        """
+        """处理 GIF 动图：分批提交 executor（每批10帧），批次间 yield"""
         try:
             loop = asyncio.get_running_loop()
+            quality = config.output_quality if config else 85
             max_frames = config.max_gif_frames if config else 200
 
-            # ---- 阶段 1：主线程收集帧信息（不解码像素） ----
-            with Image.open(input_path) as gif:
-                has_transparency = "transparency" in gif.info
+            # ---- 阶段 1：主线程收集帧 ----
+            frame_data = []   # [(rgba_image, duration), ...]
+            has_transparency = False
+            frame_count = 0
 
-                frame_data = []  # [(frame_copy, duration), ...]
-                frame_count = 0
-                for raw_frame in ImageSequence.Iterator(gif):
-                    frame_count += 1
-                    if frame_count > max_frames:
-                        return False, f"GIF 帧数过多（{frame_count} > {max_frames}）"
-
-                    duration = raw_frame.info.get("duration", 100)
-                    has_transparency = has_transparency or ("transparency" in raw_frame.info)
-
-                    # 预转换 RGBA（线程安全，在主线程完成）
-                    f = raw_frame.copy()
-                    f = KaleidoscopeProcessor._to_rgba(f)
-
-                    frame_data.append((f, duration))
+            # 兼容被截断的 GIF（与测试脚本保持一致）
+            original_load_truncated = ImageFile.LOAD_TRUNCATED_IMAGES
+            ImageFile.LOAD_TRUNCATED_IMAGES = True
+            try:
+                with Image.open(input_path) as gif:
+                    has_transparency = "transparency" in gif.info
+                    for raw_frame in ImageSequence.Iterator(gif):
+                        frame_count += 1
+                        if frame_count > max_frames:
+                            return False, f"GIF 帧数过多（{frame_count} > {max_frames}）"
+                        dur = raw_frame.info.get("duration", 100)
+                        has_transparency = has_transparency or ("transparency" in raw_frame.info)
+                        f = raw_frame.copy()
+                        f = KaleidoscopeProcessor._to_rgba(f)
+                        frame_data.append((f, dur))
+            finally:
+                ImageFile.LOAD_TRUNCATED_IMAGES = original_load_truncated
 
             if frame_count > 100:
                 logger.warning(f"处理大型 GIF: {frame_count} 帧")
-
             if not frame_data:
                 return False, "GIF 没有帧数据"
 
-            # ---- 阶段 2：逐帧提交 executor，帧间 yield ----
-            def process_one_frame(frame_rgba: Image.Image) -> Image.Image:
-                return KaleidoscopeProcessor._apply_kaleidoscope(frame_rgba)
+            # ---- 阶段 2：分批 executor（每批 10 帧） ----
+            BATCH = 10
 
-            processed_frames = []
+            def process_batch(batch_frames):
+                return [KaleidoscopeProcessor._apply_kaleidoscope(bf) for bf in batch_frames]
+
+            processed = []
             durations = []
-            for idx, (f_rgba, dur) in enumerate(frame_data):
-                result = await loop.run_in_executor(None, process_one_frame, f_rgba)
-                processed_frames.append(result)
-                durations.append(dur)
-                # 每帧之间 yield 给事件循环，防止 CPU 长时间钉死
-                await asyncio.sleep(0)
+            for i in range(0, len(frame_data), BATCH):
+                batch = frame_data[i : i + BATCH]
+                batch_frames = [bf[0] for bf in batch]
+                results = await loop.run_in_executor(None, process_batch, batch_frames)
+                processed.extend(results)
+                durations.extend(bf[1] for bf in batch)
+                await asyncio.sleep(0)  # 批次间 yield
 
-            # ---- 阶段 3：最终合成为 GIF（一次性 executor） ----
-            def assemble_gif(frames, durs, has_transp, quality):
-                # 统一尺寸
+            # ---- 阶段 3：合成保存 ----
+            def assemble_gif(frames, durs, has_transp, q):
                 target = frames[0].size
                 normalized = []
                 for f in frames:
@@ -268,30 +271,19 @@ class KaleidoscopeProcessor:
                         f = f.convert("RGB")
                     normalized.append(f)
 
-                palette_colors = max(64, min(255, int(64 + (255 - 64) * quality / 100)))
-
-                gif_frames = [f.quantize(colors=palette_colors) for f in normalized]
-
-                while len(durs) < len(gif_frames):
+                colors = max(64, min(255, int(64 + (255 - 64) * q / 100)))
+                gf = [f.quantize(colors=colors) for f in normalized]
+                while len(durs) < len(gf):
                     durs.append(100)
-                durs = durs[: len(gif_frames)]
-
-                save_kwargs = {
-                    "save_all": True,
-                    "append_images": gif_frames[1:] if len(gif_frames) > 1 else [],
-                    "duration": durs,
-                    "loop": 0,
-                    "disposal": 2,
-                }
+                durs = durs[: len(gf)]
+                kw = {"save_all": True, "append_images": gf[1:] if len(gf) > 1 else [],
+                      "duration": durs, "loop": 0, "disposal": 2}
                 if has_transp:
-                    save_kwargs["transparency"] = 0
+                    kw["transparency"] = 0
+                gf[0].save(output_path, **kw)
 
-                gif_frames[0].save(output_path, **save_kwargs)
-                return True
-
-            quality = config.output_quality if config else 85
             await loop.run_in_executor(
-                None, assemble_gif, processed_frames, durations, has_transparency, quality
+                None, assemble_gif, processed, durations, has_transparency, quality
             )
 
             return True, "万花筒 GIF 处理成功"

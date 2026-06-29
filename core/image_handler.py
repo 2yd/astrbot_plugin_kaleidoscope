@@ -262,14 +262,7 @@ class ImageHandler:
 
     def _result_msg(self, event, output_path: Path, mode: str):
         """构建结果消息"""
-        if self.config.silent_mode:
-            return event.chain_result([Comp.Image(file=str(output_path))])
-        else:
-            desc = KaleidoscopeProcessor.get_mode_description(mode)
-            return event.chain_result([
-                Comp.Plain(text=f"✅ {desc}\n"),
-                Comp.Image(file=str(output_path)),
-            ])
+        return event.chain_result([Comp.Image(file=str(output_path))])
 
     def _error_msg(self, event, message: str, detail: str = None):
         """构建错误消息"""
