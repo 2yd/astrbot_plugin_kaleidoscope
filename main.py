@@ -62,6 +62,7 @@ class KaleidoscopePlugin(Star):
         await self._ensure_initialized()
         async for result in self.image_handler.process_kaleidoscope(event):
             yield result
+        event.stop_event()
 
     # ---- 指令：万花筒帮助 ----
 
@@ -89,6 +90,7 @@ class KaleidoscopePlugin(Star):
 - 发图同时: /万花筒 [图片]
 - 发GIF动图: @机器人 万花筒"""
         yield event.plain_result(help_text)
+        event.stop_event()
 
     # ---- 自然语言指令（无斜杠） ----
 
@@ -127,6 +129,7 @@ class KaleidoscopePlugin(Star):
                 await self._ensure_initialized()
                 async for result in self.image_handler.process_kaleidoscope(event, mode):
                     yield result
+            event.stop_event()
 
     # ---- 初始化 ----
 
